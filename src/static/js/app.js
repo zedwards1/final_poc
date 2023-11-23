@@ -13,7 +13,7 @@ function App() {
 }
 
 function DateTime() {
-    const { Row, Button } = ReactBootstrap;
+    const { Row, Button, Col } = ReactBootstrap;
     const [date, setDate] = React.useState(new Date());
 
     React.useEffect(() => {
@@ -28,11 +28,10 @@ function DateTime() {
 
     return(
         <div>
-            <Row>
-                <p> Time : {date.toLocaleTimeString()}</p>
-                <Button type="submit" class="btn btn-secondary">
-                    Send Time
-                </Button>
+            <Row gutter={1}>
+                <Col>
+                    <p> Time : {date.toLocaleTimeString()}</p>
+                </Col>
             </Row>
             <p> Date : {date.toLocaleDateString()}</p>
 
@@ -47,11 +46,18 @@ function AlarmsCard() {
         fetch('/alarms')
             .then((r) => r.json())
             .then(setAlarms);
-    }, [alarms]);
+    }, []);
+
+    const onAlarmAdd = React.useCallback(
+        (alarm) => {
+            if(!alarms.find(item => item.name === alarm.name)){
+                setAlarms([...alarms, alarm]);
+            }
+        }, [alarms]);
 
     const onAlarmUpdate = React.useCallback(
         (alarm) => {
-            const index = alarms.findIndex((i) => i.id === alarm.id);
+            const index = alarms.findIndex((i) => i.name === alarm.name);
             setAlarms([
                 ...alarms.slice(0, index),
                 alarm,
@@ -63,7 +69,7 @@ function AlarmsCard() {
 
     const onAlarmRemoval = React.useCallback(
         (alarm) => {
-            const index = alarms.findIndex((i) => i.id === alarm.id);
+            const index = alarms.findIndex((i) => i.name === alarm.name);
             setAlarms([...alarms.slice(0, index), ...alarms.slice(index + 1)]);
         },
         [alarms],
@@ -73,7 +79,7 @@ function AlarmsCard() {
     
     return (
         <React.Fragment>
-            {alarms.length <= 10 ? (<AddAlarmForm />) 
+            {alarms.length < 10 ? (<AddAlarmForm onAlarmAdd={onAlarmAdd}/>) 
             : (<p className="text-center">MAX NUMBER OF ALARMS REACHED!!!</p>)}
             {alarms.length === 0 && (
                 <p className="text-center">No alarms yet! Add one above!</p>
@@ -81,8 +87,7 @@ function AlarmsCard() {
             {alarms.map((alarm) => (
                 <AlarmDisplay
                     alarm={alarm}
-                    key={alarm.id}
-                    onAlarmUpdate={onAlarmUpdate}
+                    key={alarm.name}
                     onAlarmRemoval={onAlarmRemoval}
                 />
             ))}
@@ -90,7 +95,7 @@ function AlarmsCard() {
     );
 }
 
-function AddAlarmForm() {
+function AddAlarmForm( { onAlarmAdd }) {
     const { Form, InputGroup, Button } = ReactBootstrap;
 
     const [newAlarm, setNewAlarm] = React.useState('');
@@ -108,6 +113,7 @@ function AddAlarmForm() {
             .then((alarm) => {
                 setSubmitting(false);
                 setNewAlarm('');
+                onAlarmAdd(alarm);
             });
     };
 
@@ -139,13 +145,13 @@ function AlarmDisplay({ alarm, onAlarmRemoval }) {
     const { Container, Row, Col, Button } = ReactBootstrap;
 
     const removeAlarm = () => {
-        fetch(`/alarms/${alarm.id}`, { method: 'DELETE' }).then(() =>
+        fetch(`/alarms/${alarm.name}`, { method: 'DELETE' }).then(() =>
             onAlarmRemoval(alarm),
         );
     };
 
     return (
-        <Container fluid className={`alarm`}>
+        <Container fluname className={`alarm`}>
             <Row>
                 <Col xs={10} className="name">
                     {alarm.name}
