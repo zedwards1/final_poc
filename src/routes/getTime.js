@@ -1,6 +1,6 @@
 const db = require('../persistence');
 
 module.exports = async (req, res) => {
-    await db.removeAlarm(req.params.name);
-    res.sendStatus(200);
+    const time = new Date().toLocaleTimeString();
+    res.send(time);
 };
