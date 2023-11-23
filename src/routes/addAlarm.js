@@ -5,7 +5,6 @@ module.exports = async (req, res) => {
     const alarm = {
         id: uuid(),
         name: req.body.name,
-        completed: false,
     };
 
     await db.storeAlarm(alarm);

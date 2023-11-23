@@ -121,7 +121,6 @@ function AlarmDisplay({ alarm, onAlarmUpdate, onAlarmRemoval }) {
             method: 'PUT',
             body: JSON.stringify({
                 name: alarm.name,
-                completed: !alarm.completed,
             }),
             headers: { 'Content-Type': 'application/json' },
         })
@@ -136,29 +135,8 @@ function AlarmDisplay({ alarm, onAlarmUpdate, onAlarmRemoval }) {
     };
 
     return (
-        <Container fluid className={`alarm ${alarm.completed && 'completed'}`}>
+        <Container fluid className={`alarm`}>
             <Row>
-                <Col xs={1} className="text-center">
-                    <Button
-                        className="toggles"
-                        size="sm"
-                        variant="link"
-                        onClick={toggleCompletion}
-                        aria-label={
-                            alarm.completed
-                                ? 'Mark alarm as incomplete'
-                                : 'Mark alarm as complete'
-                        }
-                    >
-                        <i
-                            className={`far ${
-                                alarm.completed
-                                    ? 'fa-check-square'
-                                    : 'fa-square'
-                            }`}
-                        />
-                    </Button>
-                </Col>
                 <Col xs={10} className="name">
                     {alarm.name}
                 </Col>

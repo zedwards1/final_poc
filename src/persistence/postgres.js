@@ -38,7 +38,7 @@ async function init() {
     return client.connect().then(async () => {
         console.log(`Connected to postgres db at host ${HOST}`);
         // Run the SQL instruction to create the table if it does not exist
-        await client.query('CREATE TABLE IF NOT EXISTS alarm_table (id varchar(36), name varchar(255), completed boolean)');
+        await client.query('CREATE TABLE IF NOT EXISTS alarm_table (id varchar(36), name varchar(255))');
         console.log('Connected to db and created table alarm_table if it did not exist');
     }).catch(err => {
         console.error('Unable to connect to the database:', err);
@@ -50,8 +50,7 @@ async function getAlarms() {
   return client.query('SELECT * FROM alarm_table').then(res => {
     return res.rows.map(row => ({
       id: row.id,
-      name: row.name,
-      completed: row.completed
+      name: row.name
     }));
   }).catch(err => {
     console.error('Unable to get alarms:', err);
@@ -79,7 +78,7 @@ async function getAlarm(id) {
   
 // Store one alarm in the table
 async function storeAlarm(alarm) {
-    return client.query('INSERT INTO alarm_table(id, name, completed) VALUES($1, $2, $3)', [alarm.id, alarm.name, alarm.completed]).then(() => {
+    return client.query('INSERT INTO alarm_table(id, name) VALUES($1, $2)', [alarm.id, alarm.name]).then(() => {
       console.log('Stored alarm:', alarm);
     }).catch(err => {
       console.error('Unable to store alarm:', err);
@@ -88,7 +87,7 @@ async function storeAlarm(alarm) {
   
 // Update one alarm by id in the table
 async function updateAlarm(id, alarm) {
-    return client.query('UPDATE alarm_table SET name = $1, completed = $2 WHERE id = $3', [alarm.name, alarm.completed, id]).then(() => {
+    return client.query('UPDATE alarm_table SET name = $1 WHERE id = $2', [alarm.name, id]).then(() => {
       console.log('Updated alarm:', alarm);
     }).catch(err => {
       console.error('Unable to update alarm:', err);
