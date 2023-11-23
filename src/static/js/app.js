@@ -4,109 +4,130 @@ function App() {
         <Container>
             <Row>
                 <Col md={{ offset: 3, span: 6 }}>
-                    <TodoListCard />
+                    <DateTime></DateTime>
+                    <AlarmsCard />
                 </Col>
             </Row>
         </Container>
     );
 }
 
-function TodoListCard() {
-    const [items, setItems] = React.useState(null);
+function DateTime() {
+    const { Row, Button } = ReactBootstrap;
+    const [date, setDate] = React.useState(new Date());
 
     React.useEffect(() => {
-        fetch('/items')
-            .then(r => r.json())
-            .then(setItems);
-    }, []);
+        const timer = setInterval(() => {
+            setDate(new Date());
+        }, 1000)
 
-    const onNewItem = React.useCallback(
-        newItem => {
-            setItems([...items, newItem]);
-        },
-        [items],
-    );
+        return function cleanup(){
+            clearInterval(timer)
+        }
+    })
 
-    const onItemUpdate = React.useCallback(
-        item => {
-            const index = items.findIndex(i => i.id === item.id);
-            setItems([
-                ...items.slice(0, index),
-                item,
-                ...items.slice(index + 1),
+    return(
+        <div>
+            <Row>
+                <p> Time : {date.toLocaleTimeString()}</p>
+                <Button type="submit" class="btn btn-secondary">
+                    Send Time
+                </Button>
+            </Row>
+            <p> Date : {date.toLocaleDateString()}</p>
+
+        </div>
+    )
+}
+
+function AlarmsCard() {
+    const [alarms, setAlarms] = React.useState(null);
+
+    React.useEffect(() => {
+        fetch('/alarms')
+            .then((r) => r.json())
+            .then(setAlarms);
+    }, [alarms]);
+
+    const onAlarmUpdate = React.useCallback(
+        (alarm) => {
+            const index = alarms.findIndex((i) => i.id === alarm.id);
+            setAlarms([
+                ...alarms.slice(0, index),
+                alarm,
+                ...alarms.slice(index + 1),
             ]);
         },
-        [items],
+        [alarms],
     );
 
-    const onItemRemoval = React.useCallback(
-        item => {
-            const index = items.findIndex(i => i.id === item.id);
-            setItems([...items.slice(0, index), ...items.slice(index + 1)]);
+    const onAlarmRemoval = React.useCallback(
+        (alarm) => {
+            const index = alarms.findIndex((i) => i.id === alarm.id);
+            setAlarms([...alarms.slice(0, index), ...alarms.slice(index + 1)]);
         },
-        [items],
+        [alarms],
     );
 
-    if (items === null) return 'Loading...';
-
+    if (alarms === null) return 'Loading...';
+    
     return (
         <React.Fragment>
-            <AddItemForm onNewItem={onNewItem} />
-            {items.length === 0 && (
-                <p className="text-center">No items yet! Add one above!</p>
+            {alarms.length <= 10 ? (<AddAlarmForm />) 
+            : (<p className="text-center">MAX NUMBER OF ALARMS REACHED!!!</p>)}
+            {alarms.length === 0 && (
+                <p className="text-center">No alarms yet! Add one above!</p>
             )}
-            {items.map(item => (
-                <ItemDisplay
-                    item={item}
-                    key={item.id}
-                    onItemUpdate={onItemUpdate}
-                    onItemRemoval={onItemRemoval}
+            {alarms.map((alarm) => (
+                <AlarmDisplay
+                    alarm={alarm}
+                    key={alarm.id}
+                    onAlarmUpdate={onAlarmUpdate}
+                    onAlarmRemoval={onAlarmRemoval}
                 />
             ))}
         </React.Fragment>
     );
 }
 
-function AddItemForm({ onNewItem }) {
+function AddAlarmForm() {
     const { Form, InputGroup, Button } = ReactBootstrap;
 
-    const [newItem, setNewItem] = React.useState('');
+    const [newAlarm, setNewAlarm] = React.useState('');
     const [submitting, setSubmitting] = React.useState(false);
 
-    const submitNewItem = e => {
+    const submitNewAlarm = (e) => {
         e.preventDefault();
         setSubmitting(true);
-        fetch('/items', {
+        fetch('/alarms', {
             method: 'POST',
-            body: JSON.stringify({ name: newItem }),
+            body: JSON.stringify({ name: newAlarm }),
             headers: { 'Content-Type': 'application/json' },
         })
-            .then(r => r.json())
-            .then(item => {
-                onNewItem(item);
+            .then((r) => r.json())
+            .then((alarm) => {
                 setSubmitting(false);
-                setNewItem('');
+                setNewAlarm('');
             });
     };
 
     return (
-        <Form onSubmit={submitNewItem}>
+        <Form onSubmit={submitNewAlarm}>
             <InputGroup className="mb-3">
                 <Form.Control
-                    value={newItem}
-                    onChange={e => setNewItem(e.target.value)}
-                    type="text"
-                    placeholder="New Item"
+                    value={newAlarm}
+                    onChange={(e) => setNewAlarm(e.target.value)}
+                    type="time"
                     aria-describedby="basic-addon1"
                 />
                 <InputGroup.Append>
                     <Button
                         type="submit"
                         variant="success"
-                        disabled={!newItem.length}
+                        disabled={!newAlarm.length}
                         className={submitting ? 'disabled' : ''}
                     >
-                        {submitting ? 'Adding...' : 'Add Item'}
+                        {submitting ? 'Adding...' : 'Add Alarm'}
                     </Button>
                 </InputGroup.Append>
             </InputGroup>
@@ -114,59 +135,27 @@ function AddItemForm({ onNewItem }) {
     );
 }
 
-function ItemDisplay({ item, onItemUpdate, onItemRemoval }) {
+function AlarmDisplay({ alarm, onAlarmRemoval }) {
     const { Container, Row, Col, Button } = ReactBootstrap;
 
-    const toggleCompletion = () => {
-        fetch(`/items/${item.id}`, {
-            method: 'PUT',
-            body: JSON.stringify({
-                name: item.name,
-                completed: !item.completed,
-            }),
-            headers: { 'Content-Type': 'application/json' },
-        })
-            .then(r => r.json())
-            .then(onItemUpdate);
-    };
-
-    const removeItem = () => {
-        fetch(`/items/${item.id}`, { method: 'DELETE' }).then(() =>
-            onItemRemoval(item),
+    const removeAlarm = () => {
+        fetch(`/alarms/${alarm.id}`, { method: 'DELETE' }).then(() =>
+            onAlarmRemoval(alarm),
         );
     };
 
     return (
-        <Container fluid className={`item ${item.completed && 'completed'}`}>
+        <Container fluid className={`alarm`}>
             <Row>
-                <Col xs={1} className="text-center">
-                    <Button
-                        className="toggles"
-                        size="sm"
-                        variant="link"
-                        onClick={toggleCompletion}
-                        aria-label={
-                            item.completed
-                                ? 'Mark item as incomplete'
-                                : 'Mark item as complete'
-                        }
-                    >
-                        <i
-                            className={`far ${
-                                item.completed ? 'fa-check-square' : 'fa-square'
-                            }`}
-                        />
-                    </Button>
-                </Col>
                 <Col xs={10} className="name">
-                    {item.name}
+                    {alarm.name}
                 </Col>
                 <Col xs={1} className="text-center remove">
                     <Button
                         size="sm"
                         variant="link"
-                        onClick={removeItem}
-                        aria-label="Remove Item"
+                        onClick={removeAlarm}
+                        aria-label="Remove Alarm"
                     >
                         <i className="fa fa-trash text-danger" />
                     </Button>
