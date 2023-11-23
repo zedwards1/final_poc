@@ -1,2 +1,3 @@
-# final_poc
-Web application for CPE 580 final project.
+# Sample Node.js application
+
+This repository is a sample Node.js application for Docker's documentation.
