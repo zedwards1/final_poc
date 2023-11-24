@@ -6,6 +6,7 @@ const addAlarm = require('./routes/addAlarm');
 const updateAlarm = require('./routes/updateAlarm');
 const deleteAlarm = require('./routes/deleteAlarm');
 const getTime = require('./routes/getTime');
+const nextAlarm = require('./routes/nextAlarm');
 
 app.use(express.json());
 app.use(express.static(__dirname + '/static'));
@@ -15,6 +16,7 @@ app.get('/alarms', getAlarms);
 app.post('/alarms', addAlarm);
 app.put('/alarms/:name', updateAlarm);
 app.delete('/alarms/:name', deleteAlarm);
+app.get('/alarms/next', nextAlarm);
 
 db.init().then(() => {
     app.listen(3000, () => console.log('Listening on port 3000'));

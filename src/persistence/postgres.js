@@ -49,9 +49,16 @@ async function init() {
 async function getAlarms() {
   return client.query('SELECT * FROM alarm_table').then(res => {
     return res.rows.map(row => ({
-      id: row.id,
       name: row.name
     }));
+  }).catch(err => {
+    console.error('Unable to get alarms:', err);
+  });
+}
+
+async function getNextAlarm() {
+  return client.query('SELECT * FROM alarm_table').then(res => {
+    return res.rows.map(row => (parseInt(row.name.replace(/:/g, ''))));
   }).catch(err => {
     console.error('Unable to get alarms:', err);
   });
@@ -107,6 +114,7 @@ module.exports = {
   teardown,
   getAlarms,
   getAlarm,
+  getNextAlarm,
   storeAlarm,
   updateAlarm,
   removeAlarm,
