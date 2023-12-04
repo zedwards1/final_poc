@@ -19,7 +19,7 @@ function DateTime() {
     React.useEffect(() => {
         const timer = setInterval(() => {
             setDate(new Date());
-        }, 1000)
+        }, 60000)
 
         return function cleanup(){
             clearInterval(timer)
@@ -30,7 +30,7 @@ function DateTime() {
         <div>
             <Row gutter={1}>
                 <Col>
-                    <p> Time : {date.toLocaleTimeString()}</p>
+                    <p> Time : {date.toLocaleTimeString('en-us', {hour: '2-digit', minute: '2-digit', hour12: false})}</p>
                 </Col>
             </Row>
             <p> Date : {date.toLocaleDateString()}</p>
