@@ -40,9 +40,36 @@ async function init() {
         // Run the SQL instruction to create the table if it does not exist
         await client.query('CREATE TABLE IF NOT EXISTS alarm_table (name varchar(255) UNIQUE)');
         console.log('Connected to db and created table alarm_table if it did not exist');
+        await client.query('CREATE TABLE IF NOT EXISTS offset_table (id INTEGER UNIQUE, hours INTEGER, minutes INTEGER)');
+        console.log('Created offset table');
+        await client.query('INSERT INTO offset_table(id, hours, minutes) VALUES($1, $2, $3) ON CONFLICT (id) DO NOTHING;', [1, 0, 0]).then(() => {
+          console.log('Initialized alarm:', alarm);
+        }).catch(err => {
+          console.error('Unable to store alarm:', err);
+        });
+
     }).catch(err => {
         console.error('Unable to connect to the database:', err);
     });
+}
+
+async function updateOffset(offset){
+  return client.query('UPDATE offset_table SET hours = $1, minutes = $2 WHERE id=1;', [offset['hours'], offset['minutes']]).then(() => {
+    console.log('Updated offset:', offset);
+  }).catch(err => {
+    console.error('Unable to update offset:', err);
+  });
+}
+
+async function getOffset(){
+  return client.query('SELECT * from offset_table').then(res => {
+    return res.rows.map(row => ({
+      hours: row.hours,
+      minutes: row.minutes,
+    }));
+  }).catch(err => {
+    console.error('Unable to get current offset:', err);
+  });
 }
 
 // Get all alarms from the table
@@ -118,4 +145,6 @@ module.exports = {
   storeAlarm,
   updateAlarm,
   removeAlarm,
+  updateOffset,
+  getOffset,
 };

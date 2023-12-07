@@ -1,10 +1,12 @@
 const db = require('../persistence');
 
 module.exports = async (req, res) => {
+    const offset = await db.getOffset();
     let time = new Date();
-    let offset = time.getHours() - 5;
-    time.setHours(offset);
-    let data =  {time: time.toLocaleString('en-us', {hour: '2-digit', minute: '2-digit', hour12: false}).replace(/:/g, '')};
-    res.send(JSON.stringify(data));
-    //res.send(time.toLocaleTimeString('en-us', {hour: '2-digit', minute: '2-digit'}).replace(/:/g, '').replace(/\D/g, ''));
+    const hours = time.getHours() - 5 + offset[0]['hours'];
+    const minutes = time.getMinutes() + offset[0]['minutes'];
+    time.setHours(hours);
+    time.setMinutes(minutes);
+    const object = { time: time.toLocaleTimeString('en-us', {hour: '2-digit', minute: '2-digit', hour12: false}).replace(/:/g, '').replace(/\D/g, '') }
+    res.send(object);
 };

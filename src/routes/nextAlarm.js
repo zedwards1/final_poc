@@ -1,12 +1,14 @@
 const db = require('../persistence');
 module.exports = async (req, res) => {
     const alarms = await db.getNextAlarm();
-    let hours = new Date().getHours()-5;
-    if(hours < 0){
-        hours+=24;
-    }
-    const minutes = new Date().getMinutes();
-    const military = (hours * 100) + minutes;
+    const offset = await db.getOffset();
+    let time = new Date();
+    const hours = time.getHours() - 5 + offset[0]['hours'];
+    const minutes = time.getMinutes() + offset[0]['minutes'];
+    time.setHours(hours);
+    time.setMinutes(minutes);
+    const military = parseInt(time.toLocaleTimeString('en-us', {hour: '2-digit', minute: '2-digit', hour12: false}).replace(/:/g, '').replace(/\D/g, ''));
+    console.log(military);
     let min = 2500;
     let minAlarm=2500;
     for(let i=0; i<alarms.length; i++){
@@ -17,7 +19,7 @@ module.exports = async (req, res) => {
         }
     }
 
-    if(minAlarm==2500){
+    if(minAlarm===2500){
         for(let i=0; i<alarms.length; i++){
             let diff = parseInt(alarms[i].toString().replace(/:/g, ''))-military;
             if(diff < min){

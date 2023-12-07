@@ -3,8 +3,10 @@ function App() {
     return (
         <Container>
             <Row>
+                <TimeCard />
+            </Row>
+            <Row style={{ paddingTop: 10, paddingBottom: 10}}>
                 <Col md={{ offset: 3, span: 6 }}>
-                    <DateTime></DateTime>
                     <AlarmsCard />
                 </Col>
             </Row>
@@ -12,40 +14,25 @@ function App() {
     );
 }
 
-function DateTime() {
-    const { Row, Button, Col } = ReactBootstrap;
-    const [date, setDate] = React.useState(new Date());
-
-    React.useEffect(() => {
-        const timer = setInterval(() => {
-            setDate(new Date());
-        }, 60000)
-
-        return function cleanup(){
-            clearInterval(timer)
-        }
-    })
-
-    return(
-        <div>
-            <Row gutter={1}>
-                <Col>
-                    <p> Time : {date.toLocaleTimeString('en-us', {hour: '2-digit', minute: '2-digit', hour12: false})}</p>
-                </Col>
-            </Row>
-            <p> Date : {date.toLocaleDateString()}</p>
-
-        </div>
-    )
-}
-
 function AlarmsCard() {
-    const [alarms, setAlarms] = React.useState(null);
+    const [alarms, setAlarms] = React.useState([]);
 
     React.useEffect(() => {
         fetch('/alarms')
             .then((r) => r.json())
-            .then(setAlarms);
+            .then((data) => {
+                const newData = data.map((alarm) => {
+                    const military = alarm['name'].replace(/:/g, '');
+                    const hours = Math.floor(military/100);
+                    const minutes = military % 100;
+                    let time = new Date();
+                    time.setHours(hours);
+                    time.setMinutes(minutes);
+                    console.log(time.toLocaleTimeString('en-us', {hour: '2-digit', minute: '2-digit'}));
+                    return { name: time.toLocaleTimeString('en-us', {hour: '2-digit', minute: '2-digit'}) }
+                })
+                setAlarms(newData);
+            });
     }, []);
 
     const onAlarmAdd = React.useCallback(
@@ -95,6 +82,99 @@ function AlarmsCard() {
     );
 }
 
+function TimeCard() {
+    const { Form, InputGroup, Button, ButtonGroup, Row, Col, Container } = ReactBootstrap;
+    
+    const [offset, setOffset] = React.useState({ hours: 0, minutes: 0});
+
+    React.useEffect(() => {
+        fetch('/offset')
+            .then((r) => r.json())
+            .then(setOffset);
+    }, []);
+
+    const [date, setDate] = React.useState(new Date());
+
+    React.useEffect(() => {
+        const timer = setInterval(() => {
+            let current_date = new Date();
+            const minutes = current_date.getMinutes();
+            const hours = current_date.getHours();
+            current_date.setHours(hours + offset['hours']);
+            current_date.setMinutes(minutes + offset['minutes']);
+            setDate(current_date);
+        }, 1000)
+
+        return function cleanup(){
+            clearInterval(timer)
+        }
+    })
+
+    React.useEffect(() => {
+        let current_date = new Date();
+        const minutes = current_date.getMinutes();
+        const hours = current_date.getHours();
+        current_date.setHours(hours + offset['hours']);
+        current_date.setMinutes(minutes + offset['minutes']);
+        setDate(current_date);
+
+        fetch('/offset', {
+            method: 'PUT',
+            body: JSON.stringify({ hours: offset['hours'], minutes: offset['minutes'] }),
+            headers: { 'Content-Type': 'application/json' },
+        })
+        .then((r) => r.json());
+
+    }, [offset])
+
+    const adjustTime = (op, type) => {
+        setOffset((prevOffset) => {
+            const newOffset = { ...prevOffset };
+
+            if (op === 'add'){
+                newOffset[type]++;
+                console.log(newOffset);
+            }else if(op === 'sub'){
+                newOffset[type]--;
+                console.log(newOffset);
+            }
+
+            return newOffset
+        })
+    }
+
+    return (
+        <Container>
+            <Row gutter={1}>
+                <Col>
+                    <p className="text-center"> Time : {date.toLocaleTimeString('en-us', {hour: '2-digit', minute: '2-digit'})}</p>
+                </Col>
+            </Row>
+            <p className="text-center"> Date : {date.toLocaleDateString()}</p>
+          <Row className="justify-content-center">
+            <Col xs={4} className="text-center">
+                <p className="text-center">
+                    Hours
+                </p>
+                <ButtonGroup vertical>
+                    <Button variant="primary" onClick={() => adjustTime('add', 'hours')}>+</Button>
+                    <Button onClick={() => adjustTime('sub', 'hours')}>-</Button>
+                </ButtonGroup>
+            </Col>
+            <Col xs={4} className="text-center">
+                <p className="text-center">
+                    Minutes
+                </p>
+                <ButtonGroup vertical>
+                    <Button variant="primary" onClick={() => adjustTime('add', 'minutes')}>+</Button>
+                    <Button onClick={() => adjustTime('sub', 'minutes')}>-</Button>
+                </ButtonGroup>
+            </Col>
+          </Row>
+        </Container>
+    );
+}
+
 function AddAlarmForm( { onAlarmAdd }) {
     const { Form, InputGroup, Button } = ReactBootstrap;
 
@@ -113,7 +193,14 @@ function AddAlarmForm( { onAlarmAdd }) {
             .then((alarm) => {
                 setSubmitting(false);
                 setNewAlarm('');
-                onAlarmAdd(alarm);
+                const military = alarm['name'].replace(/:/g, '');
+                const hours = Math.floor(military/100);
+                const minutes = military % 100;
+                let time = new Date();
+                time.setHours(hours);
+                time.setMinutes(minutes);
+                console.log(time.toLocaleTimeString('en-us', {hour: '2-digit', minute: '2-digit'}));
+                onAlarmAdd({name: time.toLocaleTimeString('en-us', {hour: '2-digit', minute: '2-digit'})});
             });
     };
 
